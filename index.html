@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portfolio CRUD Keren</title>
+<style>
+* { box-sizing: border-box; }
+
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    margin: 0;
+    padding: 20px;
+    color: #333;
+}
+
+h1 {
+    text-align: center;
+    color: white;
+    margin-bottom: 25px;
+}
+
+.container {
+    max-width: 1100px;
+    margin: auto;
+}
+
+.form {
+    background: rgba(255,255,255,0.95);
+    backdrop-filter: blur(10px);
+    padding: 25px;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    margin-bottom: 30px;
+}
+
+.form-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.form-group.full { grid-template-columns: 1fr; }
+
+label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #444;
+}
+
+input, textarea {
+    width: 100%;
+    padding: 12px 14px;
+    margin-top: 5px;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+    font-size: 14px;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+input:focus, textarea:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102,126,234,0.2);
+}
+
+button {
+    margin-top: 15px;
+    padding: 12px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    width: 100%;
+    font-weight: bold;
+    transition: 0.3s;
+}
+
+button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+.cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 20px;
+}
+
+.card {
+    background: white;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    transition: 0.3s;
+}
+
+.card:hover {
+    transform: translateY(-5px) scale(1.02);
+}
+
+.card img {
+    width: 100%;
+    height: 170px;
+    object-fit: cover;
+}
+
+.card-body {
+    padding: 15px;
+}
+
+.card-body h3 {
+    margin: 0 0 10px;
+}
+
+.card-body p {
+    font-size: 13px;
+    color: #666;
+}
+
+.actions {
+    margin-top: 10px;
+    display: flex;
+    gap: 10px;
+}
+
+.actions button {
+    flex: 1;
+    padding: 8px;
+    font-size: 12px;
+    border-radius: 8px;
+}
+
+.actions button:first-child {
+    background: #667eea;
+}
+
+.actions button:last-child {
+    background: #ff6b6b;
+}
+
+@media (max-width: 600px) {
+    .form-group { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+    <h1>✨ Portofolio CRUD</h1>
+
+    <div class="form">
+        <input type="hidden" id="editIndex">
+
+        <div class="form-group">
+            <div>
+                <label>Judul Project</label>
+                <input type="text" id="title">
+            </div>
+            <div>
+                <label>Upload Gambar</label>
+                <input type="file" id="image">
+            </div>
+        </div>
+
+        <div class="form-group full">
+            <div>
+                <label>Deskripsi</label>
+                <textarea id="desc"></textarea>
+            </div>
+        </div>
+
+        <button onclick="saveData()">Simpan Data</button>
+    </div>
+
+    <div class="cards" id="cards"></div>
+</div>
+
+<script>
+let data = JSON.parse(localStorage.getItem('portfolio')) || [];
+
+function render() {
+    const cards = document.getElementById('cards');
+    cards.innerHTML = '';
+
+    data.forEach((item, index) => {
+        cards.innerHTML += `
+            <div class="card">
+                <img src="${item.image}" />
+                <div class="card-body">
+                    <h3>${item.title}</h3>
+                    <p>${item.desc}</p>
+                    <div class="actions">
+                        <button onclick="editData(${index})">Edit</button>
+                        <button onclick="deleteData(${index})">Hapus</button>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+}
+
+function saveData() {
+    const title = document.getElementById('title').value;
+    const desc = document.getElementById('desc').value;
+    const imageInput = document.getElementById('image');
+    const editIndex = document.getElementById('editIndex').value;
+
+    if (!title || !desc) return alert('Isi semua data!');
+
+    if (imageInput.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            saveToData(title, desc, e.target.result, editIndex);
+        }
+        reader.readAsDataURL(imageInput.files[0]);
+    } else {
+        saveToData(title, desc, data[editIndex]?.image || '', editIndex);
+    }
+}
+
+function saveToData(title, desc, image, index) {
+    if (index === '') {
+        data.push({title, desc, image});
+    } else {
+        data[index] = {title, desc, image};
+    }
+
+    localStorage.setItem('portfolio', JSON.stringify(data));
+    resetForm();
+    render();
+}
+
+function editData(index) {
+    document.getElementById('title').value = data[index].title;
+    document.getElementById('desc').value = data[index].desc;
+    document.getElementById('editIndex').value = index;
+}
+
+function deleteData(index) {
+    if (confirm('Hapus data ini?')) {
+        data.splice(index, 1);
+        localStorage.setItem('portfolio', JSON.stringify(data));
+        render();
+    }
+}
+
+function resetForm() {
+    document.getElementById('title').value = '';
+    document.getElementById('desc').value = '';
+    document.getElementById('image').value = '';
+    document.getElementById('editIndex').value = '';
+}
+
+render();
+</script>
+
+</body>
+</html>
